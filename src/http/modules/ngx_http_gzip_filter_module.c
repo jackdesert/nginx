@@ -306,7 +306,17 @@ ngx_http_gzip_header_filter(ngx_http_request_t *r)
 
     ngx_http_clear_content_length(r);
     ngx_http_clear_accept_ranges(r);
-    ngx_http_clear_etag(r);
+
+    /* Modified by Jack to enable weak etags */
+    /* Clear etags unless they're marked as weak (prefixed with 'W/') */
+    /* see http://forum.nginx.org/read.php?2,240120,243846#msg-243846 */
+    h = r->headers_out.etag;
+    if (h && !(h->value.len >= 3 &&
+            h->value.data[0] == 'W' &&
+            h->value.data[1] == '/' &&
+            h->value.data[2] == '"')) {
+      ngx_http_clear_etag(r);
+    }
 
     return ngx_http_next_header_filter(r);
 }
